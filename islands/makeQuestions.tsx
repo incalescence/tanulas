@@ -48,10 +48,31 @@ export default function MakeQuestions() {
 
     // This is a miniature function we can call when the user presses the button to send their notes
     // to the server. This should call `getQuestions()` and update the state accordingly.
-    const handleClick = () => {
-        // TODO: Implement this function to make your app work!
-        state.value = State.ERROR;
-        error.value = "Haven't finished the app yet!";
+    const handleClick = async () => {
+        // We don't want to waste sending nothing to the server, so do a pre-flight check that we
+        // actually have some contents.
+        if (notes.value === "") {
+            error.value = "No notes provided!";
+            state.value = State.ERROR;
+        } else {
+            // Before we send our data to the server, tell the user that something is actually
+            // happening.
+            state.value = State.LOADING;
+
+            // `getQuestions` is asynchronous, meaning it doesn't return a value right away. But this
+            // mini-function is also asynchronous, so we can use `await` to stop until it gets back
+            // to us.
+            const res = await getQuestions(notes.value);
+            // `res` is an object, either of questions or an error. We can check if it has a property
+            // `error` to know which one it is.
+            if ("error" in res) {
+                state.value = State.ERROR;
+                error.value = res.error;
+            } else {
+                state.value = State.QUESTIONS;
+                questions.value = res.pairs;
+            }
+        }
     };
 
     // This defines a basic layout: we have a parent section that's the height of the whole screen, and
@@ -79,12 +100,12 @@ export default function MakeQuestions() {
     return (
         <div class="h-screen flex flex-col">
             <div class="flex flex-col items-center">
-                <h1 class=" ">Tanulas</h1>
-                <p class=" ">
+                <h1 class="text-4xl">Tanulas</h1>
+                <p class="py-1">
                     Press the button to make some revision questions!
                 </p>
                 <button
-                    class=" "
+                    class="border-2 p-2 rounded hover:scale-125"
                     onClick={handleClick}
                 >
                     Make questions
